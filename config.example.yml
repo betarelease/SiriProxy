@@ -5,6 +5,13 @@ plugins:
 
     - name: 'Example'
       path: './plugins/siriproxy-example'
+	  
+	- name: 'SiriMingle'
+	  path: './plugins/mingle'
+	  host: 'mingle_hostname'
+	  username: 'your_username_here'
+	  password: 'your_password_here'
+	  project: 'siri_mingle_test'
 
     # - name: 'Thermostat'
     #   git: 'git://github.com/plamoni/SiriProxy-Thermostat.git'
