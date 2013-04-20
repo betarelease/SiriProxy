@@ -6,8 +6,8 @@ Gem::Specification.new do |s|
   s.name        = "siriproxy"
   s.version     = SiriProxy::VERSION
   s.authors     = ["plamoni", "chendo", "netpro2k"]
-  s.email       = []
-  s.homepage    = ""
+  s.email       = ["plamoni@siriproxy.info"]
+  s.homepage    = "http://www.siriproxy.info/"
   s.summary     = %q{A (tampering) proxy server for Apple's Siri}
   s.description = %q{Siri Proxy is a proxy server for Apple's Siri "assistant." The idea is to allow for the creation of custom handlers for different actions. This can allow developers to easily add functionality to Siri.}
 
@@ -20,8 +20,11 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = Gem::Requirement.new(">= 1.9.2")
 
-  s.add_runtime_dependency "CFPropertyList"
+  s.add_runtime_dependency "CFPropertyList", "=2.1.2"
   s.add_runtime_dependency "eventmachine"
   s.add_runtime_dependency "uuidtools"
-  s.add_development_dependency "rake"
+  s.add_runtime_dependency "cora", "=0.0.4"
+  s.add_runtime_dependency "bundler"
+  s.add_runtime_dependency "rake"
+  s.add_runtime_dependency "rubydns", "~> 0.6.0"
 end

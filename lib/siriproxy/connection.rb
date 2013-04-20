@@ -55,9 +55,15 @@ class SiriProxy::Connection < EventMachine::Connection
       self.consumed_ace = true;
     end
     
-    process_compressed_data()
-    
-    flush_output_buffer()
+    begin
+      process_compressed_data()
+  
+      flush_output_buffer()
+    rescue
+      puts "[Info - #{self.name}] Got invalid data (non-ACE protocol?), terminating the connection."
+
+      self.close_connection
+    end
   end
   
   def flush_output_buffer
@@ -96,24 +102,26 @@ class SiriProxy::Connection < EventMachine::Connection
     return false if unzipped_input.empty? #empty
     unpacked = unzipped_input[0...5].unpack('H*').first
     return true if(unpacked.match(/^0[34]/)) #Ping or pong
-    
+    return true if(unpacked.match(/^ff/)) #clear context
+ 
     if unpacked.match(/^[0-9][15-9]/)
       puts "ROGUE PACKET!!! WHAT IS IT?! TELL US!!! IN IRC!! COPY THE STUFF FROM BELOW"
       puts unpacked.to_hex
     end 
+
     objectLength = unpacked.match(/^0200(.{6})/)[1].to_i(16)
     return ((objectLength + 5) < unzipped_input.length) #determine if the length of the next object (plus its prefix) is less than the input buffer
   end
 
   def read_next_object_from_unzipped
     unpacked = unzipped_input[0...5].unpack('H*').first
-    info = unpacked.match(/^0(.)(.{8})$/)
+    info = unpacked.match(/^(..)(.{8})$/)
     
-    if(info[1] == "3" || info[1] == "4") #Ping or pong -- just get these out of the way (and log them for good measure)
+    if(info[1] == "03" || info[1] == "04" || info[1] == "ff") #Ping or pong -- just get these out of the way (and log them for good measure)
       object = unzipped_input[0...5]
       self.unzipped_output << object
       
-      type = (info[1] == "3") ? "Ping" : "Pong"      
+      type = (info[1] == "03") ? "Ping" : ((info[1] == "04") ? "Pong" : "Clear Context")   
       puts "[#{type} - #{self.name}] (#{info[2].to_i(16)})" if $LOG_LEVEL > 3
       self.unzipped_input = unzipped_input[5..-1]
       
@@ -167,6 +175,11 @@ class SiriProxy::Connection < EventMachine::Connection
   end
   
   def prep_received_object(object)
+    #workaround for #143
+    if object["class"] == "FinishSpeech" or object["class"] == "SpeechRecognized"
+      @block_rest_of_session = false
+    end
+    
     if object["refId"] == self.last_ref_id && @block_rest_of_session
       puts "[Info - Dropping Object from Guzzoni] #{object["class"]}" if $LOG_LEVEL > 1
       pp object if $LOG_LEVEL > 3
